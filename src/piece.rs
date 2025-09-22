@@ -1,5 +1,5 @@
 use rand::seq::SliceRandom;
-use rand::thread_rng;
+use rand::{rng};
 use crate::board;
 use crate::board::Board;
 
@@ -148,6 +148,6 @@ pub fn generate_bag() -> Vec<PieceType> {
         PieceType::J,
         PieceType::L,
     ];
-    bag.shuffle(&mut thread_rng());
+    bag.shuffle(&mut rng());
     bag
 }
