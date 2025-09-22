@@ -13,11 +13,12 @@ use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType, S
 struct Game {
     board: Board,
     current_piece: Piece,
-    bag: Vec<PieceType>,
-    is_over: bool,
+    bag: Vec<PieceType>, // list of piece types, randomized
+    is_over: bool, // flag to exit the current game
     level: usize,
     score: usize,
     completed_lines: usize,
+    first_render: bool, // used to force render for first iteration of the game, might be used also for drawing layout only once
 }
 
 impl Game {
@@ -31,6 +32,7 @@ impl Game {
             level: 0,
             score: 0,
             completed_lines: 0,
+            first_render: true,
         }
     }
 }
@@ -62,8 +64,9 @@ pub fn start_game() {
         }
 
         // render board and current piece
-        if need_redraw {
+        if need_redraw || game.first_render {
             render(&game);
+            game.first_render = false;
         }
 
         if game.is_over {
