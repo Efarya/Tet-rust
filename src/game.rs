@@ -44,10 +44,8 @@ pub fn start_game() {
 
     // loop
     loop {
-        // TODO improvement, maybe had a redraw only when needed
-        
         // read inputs
-        handle_keyboard(&mut game);
+        let mut need_redraw = handle_keyboard(&mut game);
 
         // make current_piece falls down
         if tick_down.elapsed() >= fall_delay(game.level) {
@@ -60,10 +58,13 @@ pub fn start_game() {
             }
 
             tick_down = Instant::now();
+            need_redraw = true;
         }
 
         // render board and current piece
-        render(&game);
+        if need_redraw {
+            render(&game);
+        }
 
         if game.is_over {
             break;
@@ -71,7 +72,6 @@ pub fn start_game() {
 
         // 16ms would be around 60fps, provokes flickering in embedded CLI
         // disabling fps limit is probably using cpu A LOT
-        // would be a good improvement to compute render only when gravity applies or when inputs pressed
         thread::sleep(Duration::from_millis(16));
     }
 
@@ -144,24 +144,27 @@ fn render(game: &Game) {
     stdout.flush().unwrap();
 }
 
-fn handle_keyboard(game: &mut Game) {
+fn handle_keyboard(game: &mut Game) -> bool {
     // read every 10ms from input
     if poll(Duration::from_millis(5)).unwrap() {
         if let Event::Key(event) = read().unwrap() {
             match event.code {
                 KeyCode::Left => {
                     if check_move_lat_allowed(&game.current_piece, &game.board, -1) {
-                        move_lat(&mut game.current_piece, -1)
+                        move_lat(&mut game.current_piece, -1);
+                        return true
                     }
                 }
                 KeyCode::Right => {
                     if check_move_lat_allowed(&game.current_piece, &game.board, 1) {
-                        move_lat(&mut game.current_piece, 1)
+                        move_lat(&mut game.current_piece, 1);
+                        return true
                     }
                 }
                 KeyCode::Up => {
                     if check_rotate_allowed(&game.current_piece, &game.board) {
-                        rotate(&mut game.current_piece)
+                        rotate(&mut game.current_piece);
+                        return true
                     }
                 }
                 KeyCode::Down => {
@@ -172,12 +175,15 @@ fn handle_keyboard(game: &mut Game) {
                         clear_lines(game);
                         allocate_new_piece(game);
                     }
+                    return true
                 }
                 KeyCode::Esc => { game.is_over = true; }
                 _ => {}
             }
         }
     }
+
+    false
 }
 
 fn lock_piece(game: &mut Game) {
